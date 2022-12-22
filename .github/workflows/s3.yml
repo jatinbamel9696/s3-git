@@ -19,10 +19,6 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{  secrets.AWS_SECRET_ACCESS_KEY  }}
       AWS_REGION: 'us-east-1'
 
-    steps:
-      - run: aws --version
-        shell: bash
-      - run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
-        shell: bash 
+
 
         

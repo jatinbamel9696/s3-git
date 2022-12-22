@@ -20,11 +20,7 @@ jobs:
       
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+        run: aws configure
       
       - name: test
         run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin

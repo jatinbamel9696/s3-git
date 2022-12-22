@@ -16,17 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-
-- name: image-store-task
-      run: |
-        aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
+    - name: Image-store-task
+        run:|
+          aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
         
-- name: Pause for 5 mins
-        run: |
+    - name: Pause for 5 mins
+        run:|
           sleep 600
           
-- name: image-store-describe
-      run: |
-        aws ec2 describe-store-image-tasks
+    - name: image-store-describe
+        run:|
+          aws ec2 describe-store-image-tasks
 
       

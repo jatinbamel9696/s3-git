@@ -19,8 +19,8 @@ jobs:
       
       
     steps:
-      - name: Configure AWS Credentials
-        run: aws configure
+      - name: Checkout
+        uses: actions/checkout@v2
       
       - name: test
         run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin

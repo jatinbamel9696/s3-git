@@ -55,8 +55,7 @@ jobs:
           cd ./new
           ls
           aws s3 ls
-          aws s3 sync ./new s3://source-bucket-test-jatin
-          ls
+          aws s3 sync ./ s3://source-bucket-test-jatin
           
   
       

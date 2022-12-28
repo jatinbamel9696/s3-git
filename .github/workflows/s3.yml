@@ -28,8 +28,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1' 
       
-      - name: test
-        run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
+     # - name: test
+     #   run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
         
       - name: copy ami to local
         run: aws s3 sync s3://test-ami-jatin/ami-0360e772616b9c91f.bin ./new/

@@ -39,7 +39,6 @@ jobs:
           ls 
           aws s3 ls
           aws s3 sync s3://test-ami-jatin/ ./new/
-          ls 
           cd ./new
           ls
       
@@ -52,6 +51,9 @@ jobs:
           
       - name: copy data from local to another account
         run: |
+          ls
+          cd ./new
+          ls
           aws s3 ls
           aws s3 sync ./new/ s3://source-bucket-test-jatin
           ls

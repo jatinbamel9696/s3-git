@@ -33,6 +33,7 @@ jobs:
         
       - name: copy ami to local
         run: |
+          aws s3 ls
           aws s3 sync s3://test-ami-jatin/ ./new/
           ls 
           cd ./new

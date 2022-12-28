@@ -32,7 +32,10 @@ jobs:
      #   run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
         
       - name: copy ami to local
-        run: aws s3 sync s3://test-ami-jatin/ami-0360e772616b9c91f.bin ./new/
+        run: |
+          aws s3 sync s3://test-ami-jatin/ami-0360e772616b9c91f.bin ./new/
+          ls 
+          cd ./new
 
 
 

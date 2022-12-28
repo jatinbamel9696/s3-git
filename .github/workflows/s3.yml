@@ -40,7 +40,7 @@ jobs:
           ls
       
       - name: Configure AWS credentials from Test account2
-        uses: jatin/configure-aws-credentials@v1
+        uses: Fooji/create-aws-profile-action@v1
         with:
           aws-access-key-id: ${{ env.secrets.AWS_ACCESS_KEY_ID1 }}
           aws-secret-access-key: ${{ env.secrets.AWS_SECRET_ACCESS_KEY1 }}

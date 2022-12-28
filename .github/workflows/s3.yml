@@ -37,6 +37,22 @@ jobs:
           ls 
           cd ./new
           ls
+      
+      - name: Configure AWS credentials from Test account2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
+          aws-region: 'us-east-1'
+          
+      - name: copy data from one account to another
+        run: |
+          aws s3 sync ./new/ s3://source-bucket-test-jatin
+          ls
+  
+      
+      
+  
 
 
 

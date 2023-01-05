@@ -35,10 +35,13 @@ jobs:
         run: |
           aws ec2 describe-images --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >instance_id
           instanceID=$(cat 'instance_id')
-          echo $instanceID >> $GITHUB_ENV
+          echo $instanceID
+          aws ec2 describe-images --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >> instance
+          echo $instance
+          
           
       - name: ami id check--
-        run : echo "${{ env.GITHUB_ENV }}"
+        run : echo "${{ env.instance }}"
         
           
 

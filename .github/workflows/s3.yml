@@ -36,9 +36,7 @@ jobs:
           aws ec2 describe-images --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >instance_id
           instanceID=$(cat 'instance_id')
           echo $instanceID
-          echo "instanceID=$instanceID" >> $GITHUB_ENV
-          echo "NOW=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-          echo $NOW
+          echo "instanceID=$instanceID" >> $GITHUB_ENV         
           
       - name: ec2 create-store-image-task
         run: |
@@ -47,6 +45,33 @@ jobs:
           aws ec2 describe-store-image-tasks
           sleep 200
           aws ec2 describe-store-image-tasks
+
+      - name: copy store image to local github server
+        run: |
+          aws s3 cp s3://test-ami-jatin/$instanceID.bin ./new/
+          cd ./new
+          ls
+          
+      - name: Configure AWS credentials from Test account2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
+          aws-region: 'us-east-1'
+          
+      - name: copy data from local to another account
+        run: |      
+          ls
+          cd ./new
+          ls
+          aws s3 ls
+          aws s3 cp ./$instanceID.bin s3://source-bucket-test-jatin
+          
+      - name: restore image task to another account
+        run : |
+          instanceID=$(cat 'instance_id')
+          echo $instanceID
+          aws ec2 create-restore-image-task --object-key $instanceID.bin --bucket source-bucket-test-jatin --name PFE-${DATE}
         
           
           

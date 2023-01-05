@@ -31,31 +31,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1' 
       
-     # - name: test
-     #   run: aws ec2 create-store-image-task --image-id ami-0360e772616b9c91f --bucket test-ami-jatin
-        
-      - name: copy ami to local
+      - name: fetch ami id 
         run: |
-          ls 
-          aws s3 ls
-          aws s3 sync s3://test-ami-jatin/ ./new/
-          cd ./new
-          ls
-      
-      - name: Configure AWS credentials from Test account2
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
-          aws-region: 'us-east-1'
-          
-      - name: copy data from local to another account
-        run: |
-          ls
-          cd ./new
-          ls
-          aws s3 ls
-          aws s3 sync ./ s3://source-bucket-test-jatin
+          aws ec2 describe-images --filters 'Name=tag:Name,Values=test*' --profile 9696 --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >instance_id
+          instanceID=$(cat 'instance_id')
+          echo $instanceID
+
+
           
   
       

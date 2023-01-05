@@ -39,8 +39,8 @@ jobs:
           
           
       - name: ec2 create-store-image-task
+        continue-on-error: true
         run: |
-         continue-on-error: true
          instanceID=$(cat 'instance_id')
          echo $instanceID
          run: |
@@ -52,6 +52,7 @@ jobs:
         
         
       - name: copy store image to local github server
+        continue-on-error: true
         run: |
           instanceID=$(cat 'instance_id')
           echo $instanceID
@@ -60,6 +61,7 @@ jobs:
           ls
           
       - name: Configure AWS credentials from Test account2
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
@@ -67,8 +69,8 @@ jobs:
           aws-region: 'us-east-1'
           
       - name: copy data from local to another account
-        run: |
-          continue-on-error: true
+        continue-on-error: true
+        run: |      
           instanceID=$(cat 'instance_id')
           echo $instanceID
           ls
@@ -78,8 +80,8 @@ jobs:
           aws s3 cp ./$instanceID.bin s3://source-bucket-test-jatin
           
       - name: restore image task to another account
+        continue-on-error: true
         run : |
-          continue-on-error: true
           instanceID=$(cat 'instance_id')
           echo $instanceID
           aws ec2 create-restore-image-task --object-key $instanceID.bin --bucket source-bucket-test-jatin --name PFE-${DATE}

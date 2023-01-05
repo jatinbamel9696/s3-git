@@ -38,7 +38,7 @@ jobs:
           echo $instanceID
           
       - name: create store image taks 
-        run: aws ec2 create-store-image-task --image-id $instanceID --bucket test-ami-jatin
+        run: aws ec2 create-store-image-task --image-id "$instanceID" --bucket test-ami-jatin
 
 
           

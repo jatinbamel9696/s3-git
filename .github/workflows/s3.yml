@@ -38,10 +38,45 @@ jobs:
           echo $instanceID 
           
           
-      - name: ami id check test
+      - name: ec2 create-store-image-task
         run: |
          instanceID=$(cat 'instance_id')
          echo $instanceID
+         run: |
+           aws ec2 create-store-image-task --image-id $instanceID --bucket test-ami-jatin
+           sleep 600
+           aws ec2 describe-store-image-tasks
+           sleep 200
+           aws ec2 describe-store-image-tasks
+        
+        
+      - name: copy store image to local github server
+        run: |
+          instanceID=$(cat 'instance_id')
+          echo $instanceID
+          aws s3 cp s3://test-ami-jatin/$instanceID.bin ./new/
+          cd ./new
+          ls
+          
+      - name: Configure AWS credentials from Test account2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
+          aws-region: 'us-east-1'
+          
+      - name: copy data from local to another account
+        run: |
+          ls
+          cd ./new
+          ls
+          aws s3 ls
+          aws s3 cp ./ s3://source-bucket-test-jatin
+          
+ 
+           
+         
+         
       
         
           

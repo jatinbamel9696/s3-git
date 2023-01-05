@@ -50,4 +50,4 @@ jobs:
           cd ./new
           ls
           aws s3 ls
-          aws s3 cp ./ s3://source-bucket-test-jatin
+          aws s3 cp ./onplus.pdf s3://source-bucket-test-jatin

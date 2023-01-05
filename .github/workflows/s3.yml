@@ -40,6 +40,7 @@ jobs:
           
       - name: ec2 create-store-image-task
         run: |
+         continue-on-error: true
          instanceID=$(cat 'instance_id')
          echo $instanceID
          run: |

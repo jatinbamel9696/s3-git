@@ -1,0 +1,53 @@
+name: "CI"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    name: "Test"
+    runs-on: ubuntu-latest
+    env:	
+      AWS_ACCESS_KEY_ID: ${{  secrets.AWS_ACCESS_KEY_ID  }}
+      AWS_SECRET_ACCESS_KEY: ${{  secrets.AWS_SECRET_ACCESS_KEY  }}
+      AWS_REGION: 'us-east-1'
+      AWS_ACCESS_KEY_ID1: ${{  secrets.AWS_ACCESS_KEY_ID1  }}
+      AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
+      
+      
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'       
+        
+      - name: copy store image to local github server
+        run: |
+          aws s3 cp s3://test-ami-jatin/onplus.pdf ./new/
+          cd ./new
+          ls
+          
+      - name: Configure AWS credentials from Test account2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
+          aws-region: 'us-east-1'
+          
+      - name: copy data from local to another account
+        run: |
+          ls
+          cd ./new
+          ls
+          aws s3 ls
+          aws s3 cp ./ s3://source-bucket-test-jatin

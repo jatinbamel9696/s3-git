@@ -38,7 +38,7 @@ jobs:
           echo $instanceID
           
       - name: ami id check--
-        run : echo $instanceID
+        run : echo "${{ env.instanceID }}"
         
           
 

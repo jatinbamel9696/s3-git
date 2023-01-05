@@ -31,11 +31,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'us-east-1' 
       
-      - name: fetch ami id 
+      - name: fetch latest ami id with tag value
         run: |
           aws ec2 describe-images --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >instance_id
           instanceID=$(cat 'instance_id')
           echo $instanceID
+          
+      - name: create store image taks 
+        run: aws ec2 create-store-image-task --image-id $instanceID --bucket test-ami-jatin
 
 
           

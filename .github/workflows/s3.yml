@@ -35,9 +35,39 @@ jobs:
         run: |
           aws ec2 describe-images --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >instance_id
           instanceID=$(cat 'instance_id')
-          echo $instanceID 
-          echo "NOW=$instanceID" >> $GITHUB_ENV
-
-      - name: echo
-        run: echo $NOW
+          echo $instanceID
+          echo "instanceID=$instanceID" >> $GITHUB_ENV
+          echo "NOW=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo $NOW
           
+      - name: ec2 create-store-image-task
+        run: |
+          aws ec2 create-store-image-task --image-id $instanceID --bucket test-ami-jatin
+          sleep 600
+          aws ec2 describe-store-image-tasks
+          sleep 200
+          aws ec2 describe-store-image-tasks
+        
+          
+          
+ 
+           
+         
+         
+      
+        
+          
+
+           
+
+
+          
+  
+      
+      
+  
+
+
+
+
+        

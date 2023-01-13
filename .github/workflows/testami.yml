@@ -78,46 +78,4 @@ jobs:
                 break
               fi
             done
-          if [ -z "$ami id" ]; then
-            echo "Error getting result AMI id.";
-          else
-            echo "Check if there's already a backup for $ami id."
-            backup_exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
-            if [ -z "$backup_exists" ]; then
-              echo "Backup AMI $ami_ id to S3."
-              backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id \
-                --bucket ${{ inputs.SOURCE_STAGING_BUCKET }})
-              backup object=$ (jq -r ".ObjectKey" <<< "${backup ami task output}")
-              sleep 30
-              wait time=30
-              check count=1
-              while [ $check count -le 5 ]
-              do 
-                backup ready=$ (aws 3api head-object --bucket ${{ inputs. SOURCE_STAGING_BUCKET }) --key $backup_object || true)
-                if [ -z "$backup_ready" ]; then
-                  echo "Backup not complete, wait for $wait_time_seconds...""
-                  wait_time=$(( $wait_time * $check_count )) 
-                  sleep $wait_time
-                  check_count=$(( $check_count + 1 ))
-                else
-                  break
-                  echo "AMI backed up to object s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object."
-                fi
-              done
-            else
-              backup_object=$ami_id.bin
-              echo "A backup object $backup_object already exists in bucket ${{ inputs. SOURCE_STAGING_BUCKET }}."
-            fi  
           
-            echo "Describe image $ami_id."
-            image_data=$(aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --image-ids $ami_id)
-            echo $image_data
-            image_name=$(jq -r ". Images[0].Name" <<< "${image_data}")
-            image_description=$(jq -r " Images[0].Description" <<< "${image_data}")
-            echo "image_name-$image_name" >> $GITHUB_ENV 
-            echo "image_description-$image_description" >> $GITHUB_ENV
-
-            echo "Download AMI backup object to workspace." 
-            aws S3 cp s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object ${{ github.workspace }} --region ${{ inputs.AWS_DEFAULT_REGION }}  
-       
-          fi

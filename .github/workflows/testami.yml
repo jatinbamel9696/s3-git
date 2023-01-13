@@ -67,7 +67,7 @@ jobs:
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
-          artifact_ids-$(jq -r ".builds [0].artifact_id" ${{ github.workspace }}/mainfest.json)
+          artifact_ids-$(jq -r ".builds[0].artifact_id" ${{ github.workspace }}/mainfest.json)
           IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
           for _id in "${artifact_ids_array[@]}"
             do

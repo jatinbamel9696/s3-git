@@ -50,32 +50,9 @@ jobs:
 
     steps:
       - name: Download manifest.json 
-        id: download manifest
+        id: download_manifest
         uses: actions/download-artifact@v3 
         with:
           name: manifest
 
-      - name: Configure AWS credentials 
-        id: aws_credentials 
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: 'us-east-1'
-
-      - name: Backup AMI to S3 
-        run: |
-          echo "Installing jq..."
-          sudo apt-get install -y jq
-          artifact_ids-$(jq -r ".builds[0].artifact_id" ${{ github.workspace }}/mainfest.json)
-          IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
-          for _id in "${artifact_ids_array[@]}"
-            do
-              if [[ $_id =~ ${{ inputs.AWS_DEFAULT_REGION }} ]]; then
-                ami_string=$_id
-                IFS=',' read -r -a ami_string_array <<< $ami_string
-                ami_id=${ami_string_array[1]}
-                break
-              fi
-            done
           

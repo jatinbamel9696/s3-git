@@ -13,7 +13,7 @@ on:
      
       SOURCE_STAGING_BUCKET:
         type: string
-        description: "The bucket used to store the AMI backup. file." 
+        description: "The bucket used to store the AMI backup file." 
         required: false 
         default: "test-ami-jatin"
      
@@ -85,7 +85,7 @@ jobs:
             backup exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
             if [ -z "$backup_exists" ]; then
               echo "Backup AMI $ami_ id to S3."
-              backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id --bucket ${{ inputs. SOURCE STAGING BUCKET }})
+              backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id --bucket ${{ inputs. SOURCE_STAGING_BUCKET }})
               backup object=$ (jq -r ".ObjectKey" <<< "${backup ami task output}")
               sleep 30
               wait time=30

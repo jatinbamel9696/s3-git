@@ -1,4 +1,4 @@
-name: copy-ami-to-cn
+name: CI1
 
 on:
   workflow call:

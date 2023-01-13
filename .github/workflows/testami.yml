@@ -82,7 +82,7 @@ jobs:
             echo "Error getting result AMI id.";
           else
             echo "Check if there's already a backup for $ami id."
-            backup exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
+            backup_exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
             if [ -z "$backup_exists" ]; then
               echo "Backup AMI $ami_ id to S3."
               backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id --bucket ${{ inputs. SOURCE_STAGING_BUCKET }})

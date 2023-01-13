@@ -37,85 +37,85 @@ env:
   AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
 
 jobs:
-  backup and restore ami: 
-  runs-on: ubuntu-latest 
-  name: copy-ami-to-another region
+  backup_and_restore ami: 
+    runs-on: ubuntu-latest 
+    name: copy-ami-to-another region
 
   permissions:
     id-token: write 
     contents: read
 
-timeout-minutes: 90
+  timeout-minutes: 90
 
-steps:
-  - name: Download manifest.json 
-    id: download manifest
-    uses: actions/download-artifact@v3 
-    with:
-      name: manifest
+  steps:
+    - name: Download manifest.json 
+      id: download manifest
+      uses: actions/download-artifact@v3 
+      with:
+        name: manifest
 
-  - name: Configure AWS credentials 
-    id: aws_credentials 
-    uses: aws-actions/configure-aws-credentials@v1
-    with:
-      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      aws-region: 'us-east-1'
+    - name: Configure AWS credentials 
+      id: aws_credentials 
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
 
-  - name: Backup AMI to S3 
-    run: |
-      echo "Installing jq..."
-      sudo apt-get install -y jq
-      artifact_ids-$(jq -r ".builds [0].artifact_id" ${{ github.workspace }}/mainfest.json)
-      IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
-      for _id in "${artifact_ids_array[@]}"
-        do
-          if [[ $_id =~ ${{ inputs.AWS_DEFAULT_REGION }} ]]; then
-            ami_string=$_id
-            IFS=',' read -r -a ami_string_array <<< $ami_string
-            ami_id=${ami_string_array[1]}
-            break
-          fi
-        done
-      if [ -z "$ami id" ]; then
-        echo "Error getting result AMI id.";
-      else
-        echo "Check if there's already a backup for $ami id."
-        backup exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
-        if [ -z "$backup_exists" ]; then
-          echo "Backup AMI $ami_ id to S3."
-          backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id --bucket ${{ inputs. SOURCE STAGING BUCKET }})
-          backup object=$ (jq -r ".ObjectKey" <<< "${backup ami task output}")
-          sleep 30
-          wait time=30
-          check count=1
-          while [ $check count -le 5 ]
-          do 
-            backup ready=$ (aws 3api head-object --bucket ${{ inputs. SOURCE_STAGING_BUCKET }) --key $backup_object || true)
-            if [ -z "$backup_ready" ]; then
-              echo "Backup not complete, wait for $wait_time_seconds...""
-              wait_time=$(( $wait_time * $check _count )) 
-              sleep $wait_time
-              check_count=$(( $check_count + 1 ))
-            else
+    - name: Backup AMI to S3 
+      run: |
+        echo "Installing jq..."
+        sudo apt-get install -y jq
+        artifact_ids-$(jq -r ".builds [0].artifact_id" ${{ github.workspace }}/mainfest.json)
+        IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
+        for _id in "${artifact_ids_array[@]}"
+          do
+            if [[ $_id =~ ${{ inputs.AWS_DEFAULT_REGION }} ]]; then
+              ami_string=$_id
+              IFS=',' read -r -a ami_string_array <<< $ami_string
+              ami_id=${ami_string_array[1]}
               break
-              echo "AMI backed up to object s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object."
             fi
           done
+        if [ -z "$ami id" ]; then
+          echo "Error getting result AMI id.";
         else
-          backup_object=$ami_id.bin
-          echo "A backup object $backup_object already exists in bucket ${{ inputs. SOURCE_STAGING_BUCKET }}."
-        fi  
+          echo "Check if there's already a backup for $ami id."
+          backup exists=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $ami_id.bin || true)
+          if [ -z "$backup_exists" ]; then
+            echo "Backup AMI $ami_ id to S3."
+            backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $ami_id --bucket ${{ inputs. SOURCE STAGING BUCKET }})
+            backup object=$ (jq -r ".ObjectKey" <<< "${backup ami task output}")
+            sleep 30
+            wait time=30
+            check count=1
+            while [ $check count -le 5 ]
+            do 
+              backup ready=$ (aws 3api head-object --bucket ${{ inputs. SOURCE_STAGING_BUCKET }) --key $backup_object || true)
+              if [ -z "$backup_ready" ]; then
+                echo "Backup not complete, wait for $wait_time_seconds...""
+                wait_time=$(( $wait_time * $check _count )) 
+                sleep $wait_time
+                check_count=$(( $check_count + 1 ))
+              else
+                break
+                echo "AMI backed up to object s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object."
+              fi
+            done
+          else
+            backup_object=$ami_id.bin
+            echo "A backup object $backup_object already exists in bucket ${{ inputs. SOURCE_STAGING_BUCKET }}."
+          fi  
           
-        echo "Describe image $ami_id."
-        image_data=$(aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --image-ids $ami_id)
-        echo $image_data
-        image_name=$(jq -r ". Images[0].Name" <<< "${image_data}")
-        image_description=$(jq -r " Images[0].Description" <<< "${image_data}")
-        echo "image_name-$image_name" >> $GITHUB_ENV 
-        echo "image_description-$image_description" >> $GITHUB_ENV
+          echo "Describe image $ami_id."
+          image_data=$(aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --image-ids $ami_id)
+          echo $image_data
+          image_name=$(jq -r ". Images[0].Name" <<< "${image_data}")
+          image_description=$(jq -r " Images[0].Description" <<< "${image_data}")
+          echo "image_name-$image_name" >> $GITHUB_ENV 
+          echo "image_description-$image_description" >> $GITHUB_ENV
 
-        echo "Download AMI backup object to workspace." 
-        aws S3 cp s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object ${{ github.workspace }} --region ${{ inputs.AWS_DEFAULT_REGION }}  
+          echo "Download AMI backup object to workspace." 
+          aws S3 cp s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object ${{ github.workspace }} --region ${{ inputs.AWS_DEFAULT_REGION }}  
        
-      fi
+        fi

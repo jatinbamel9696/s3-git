@@ -9,20 +9,13 @@ On:
         description: "Default AWS region used to build the AMI." 
         required: false 
         default: "us-east-1"
-      '''SOURCE ACCOUNT ID:
-        type: string
-        description: "The AWS account used to build the AMI."
-        required: true
-      '''
+     
       SOURCE_STAGING_BUCKET:
         type: string
         description: "The bucket used to store the AMI backup. file." 
         required: false
         default: "test-ami-jatin"
-      '''DESTINATION ACCOUNT ID:
-        type: string
-        description: "The AWS destination account the image should be copied to." 
-        required: true'''
+     
       DESTINATION_STAGING_BUCKET:
         type: string
         description: "The bucket used to store the AMI backup file in China partition." 
@@ -33,12 +26,7 @@ On:
         description: "Region of the destination staging bucket." 
         required: false 
         default: "us-east-1"
-      '''BUILDER ROLE:
-        type: string
-        description: "The role used to build the AMI." 
-        required: false 
-        default: "MI-BUILDER"
-      '''
+     
 
 env:
   AWS_DEFAULT_REGION: ${{ inputs.AWS_DEFAULT_REGION }}

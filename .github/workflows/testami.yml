@@ -1,6 +1,6 @@
 name: copy-ami-to-cn
 
-On:
+on:
   workflow call:
   
     inputs:
@@ -13,13 +13,13 @@ On:
       SOURCE_STAGING_BUCKET:
         type: string
         description: "The bucket used to store the AMI backup. file." 
-        required: false
+        required: false 
         default: "test-ami-jatin"
      
       DESTINATION_STAGING_BUCKET:
         type: string
         description: "The bucket used to store the AMI backup file in China partition." 
-        required: false
+        required: false 
         default: "source-bucket-test-jatin"
       DESTINATION_REGION:
         type: string

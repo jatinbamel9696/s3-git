@@ -96,7 +96,7 @@ jobs:
                 backup ready=$ (aws 3api head-object --bucket ${{ inputs. SOURCE_STAGING_BUCKET }) --key $backup_object || true)
                 if [ -z "$backup_ready" ]; then
                   echo "Backup not complete, wait for $wait_time_seconds...""
-                  wait_time=$(( $wait_time * $check _count )) 
+                  wait_time=$(( $wait_time * $check_count )) 
                   sleep $wait_time
                   check_count=$(( $check_count + 1 ))
                 else

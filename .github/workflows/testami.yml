@@ -1,7 +1,7 @@
 name: "Copy ami to another region"
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       AWS_DEFAULT_REGION:
         type: string

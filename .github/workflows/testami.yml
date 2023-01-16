@@ -2,11 +2,7 @@ name: "Copy ami to another region"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  workflow_call:
-    inputs:
+     inputs:
       AWS_DEFAULT_REGION:
         type: string
         description: "Default AWS region used to build the AMI"
@@ -27,6 +23,11 @@ on:
         description: "region of the destination staging bucket"
         required: false
         default: "us-east-1"
+      
+  push:
+    branches:
+      - main
+  
 
         
 jobs:
@@ -55,6 +56,7 @@ jobs:
       - name: fetch latest ami id with tag value
         run: |
           echo "fetching ami id"
+          echo ${{ inputs.AWS_DEFAULT_REGION }}
           aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID

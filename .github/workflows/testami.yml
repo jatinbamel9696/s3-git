@@ -2,10 +2,7 @@ name: "Copy ami to another region"
 
 on:
   workflow_dispatch:    
-  push:
-    branches:
-      - main
-        
+
 jobs:
   deploy:
     name: "Test"

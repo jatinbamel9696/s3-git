@@ -39,6 +39,7 @@ jobs:
           aws-region: 'us-east-1' 
       
       - name: fetch latest ami id with tag value
+        continue-on-error: true
         run: |
           echo "fetching ami id"
           echo ${{ inputs.AWS_DEFAULT_REGION }}
@@ -51,33 +52,35 @@ jobs:
           echo "amiID=$amiID" >> $GITHUB_ENV         
           
       - name: ec2 create-store-image-task
+        continue-on-error: true
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
           backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
-          echo "$backup_ami_task_output"
           backup_object=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")
           echo "$backup_object"
+          echo "done"
           echo "backup_object=$backup_object" >> $GITHUB_ENV 
           sleep 30
           wait_time=30
           check_count=1
-          while [$check_count -le 5]
+          while [ $check_count -le 5 ]
           do 
             backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
-            if ["$backup_ready"]; then
+            if [ -z "$backup_ready"]; then
               echo "Backup not complete, wait for $wait_time seconds..."
-              wait_time=$(($wait_time * $check_count))
+              wait_time=$(( $wait_time * $check_count ))
               sleep $wait_time
-              check_count=$(($check_count + 1))
+              check_count=$(( $check_count + 1 ))
             else
               break
-              echo "AMI backed up to object s3://$SOURCE_STAGING_BUCKET/$backup_object"
+              echo "AMI backed up to object"
             fi
           done
 
       - name: Download AMI backup object to workspace
+        continue-on-error: true
         run: |
           aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
           echo "Delete AMI backup file from S3."
@@ -106,7 +109,7 @@ jobs:
           check_count=1
           temporary_ami_ready=false
 
-          while [$check_count -le 10]
+          while [ $check_count -le 10 ]
           do 
             temporary_ami_details=$(aws ec2 describe-image --region $DESTINATION_REGION --image-ids $cn_temporary_image_id)
             temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")

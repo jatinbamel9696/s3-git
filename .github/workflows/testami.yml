@@ -4,10 +4,7 @@ on:
   workflow_dispatch:    
   push:
     branches:
-      - main
-  
-
-        
+      - main      
 jobs:
   deploy:
     name: "Test"
@@ -22,12 +19,7 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
-      
-      
-      
-      
-      
-      
+         
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -58,10 +50,8 @@ jobs:
           sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
           backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
-          backup_object=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")
+          echo "backup_object=$amiID" >> $GITHUB_ENV 
           echo "$backup_object"
-          echo "done"
-          echo "backup_object=$backup_object" >> $GITHUB_ENV 
           sleep 30
           wait_time=30
           check_count=1

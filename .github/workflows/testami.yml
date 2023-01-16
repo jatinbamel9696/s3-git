@@ -4,7 +4,8 @@ on:
   workflow_dispatch:    
   push:
     branches:
-      - main      
+      - main
+        
 jobs:
   deploy:
     name: "Test"
@@ -19,7 +20,8 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
-         
+      
+      
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -34,14 +36,13 @@ jobs:
         continue-on-error: true
         run: |
           echo "fetching ami id"
-          echo ${{ inputs.AWS_DEFAULT_REGION }}
           echo "testing $SOURCE_STAGING_BUCKET"
-          
-          
           aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID
-          echo "amiID=$amiID" >> $GITHUB_ENV         
+          echo "amiID=$amiID" >> $GITHUB_ENV       
+          echo "backup_object=$amiID" >> $GITHUB_ENV 
+          echo $backup_object
           
       - name: ec2 create-store-image-task
         continue-on-error: true
@@ -50,14 +51,17 @@ jobs:
           sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
           backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
+          backup_object1=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")
+          echo "$backup_object1"
+          echo "done" 
           sleep 30
           wait_time=30
           check_count=1
           while [ $check_count -le 5 ]
           do 
             backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $amiID.bin || true)
-            if [ -z "$backup_ready"]; then
-              echo "Backup not complete, wait for $wait_time seconds..."
+            if [ -z "$backup_ready" ]; then
+              echo "Backup not complete, wait for $wait_time seconds"
               wait_time=$(( $wait_time * $check_count ))
               sleep $wait_time
               check_count=$(( $check_count + 1 ))
@@ -66,13 +70,14 @@ jobs:
               echo "AMI backed up to object"
             fi
           done
+        
 
       - name: Download AMI backup object to workspace
         continue-on-error: true
         run: |
-          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$amiID.bin ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
+          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$amiID.bin ${{ github.workspace }} --region $AWS_DEFAULT_REGION 
           echo "Delete AMI backup file from S3."
-          aws s3 rm s3://$SOURCE_STAGING_BUCKET/$amiID.bin
+          aws s3 rm s3://$SOURCE_STAGING_BUCKET/$amiID
 
           
       - name: Configure AWS credentials from Test account2
@@ -85,11 +90,9 @@ jobs:
       - name: Upload AMI backup file $backup_object to the staging bucket.
         continue-on-error: true
         run: |      
-          aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/$amiID.bin --sse --no-progress
+          aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/$amiId.bin --sse --no-progress
           
-      - name: Create restore AMI task
-        continue-on-error: true
-        run : |
+          echo "Create restore AMI task."
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
           cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
 
@@ -117,6 +120,8 @@ jobs:
               exit 1
             fi 
           done  
+          
+          
 
 
 

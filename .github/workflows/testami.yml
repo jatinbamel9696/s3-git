@@ -1,29 +1,7 @@
 name: "Copy ami to another region"
 
 on:
-  workflow_dispatch:
-     inputs:
-      AWS_DEFAULT_REGION:
-        type: string
-        description: "Default AWS region used to build the AMI"
-        required: false
-        default: "us-east-1"
-      SOURCE_STAGING_BUCKET:
-        type: string
-        description: "the bucket used to store the ami bakup file."
-        required: false
-        default: "test-ami-jatin"
-      DESTINATION_STAGING_BUCKET:
-        type: string
-        description: "the bucket used to store the ami bakup file in another region"
-        required: false
-        default: "source-bucket-test-jatin"  
-      DESTINATION_REGION:
-        type: string
-        description: "region of the destination staging bucket"
-        required: false
-        default: "us-east-1"
-      
+  workflow_dispatch:    
   push:
     branches:
       - main
@@ -67,7 +45,7 @@ jobs:
           echo "testing $SOURCE_STAGING_BUCKET"
           
           
-          aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID
           echo "amiID=$amiID" >> $GITHUB_ENV         
@@ -77,7 +55,7 @@ jobs:
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
-          backup_ami_task_output=$( aws ec2 create-store-image-task --image-id $amiID --bucket ${{ inputs.SOURCE_STAGING_BUCKET }})
+          backup_ami_task_output=$( aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
           backup_object=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")
           echo "backup_object=$backup_object" >> $GITHUB_ENV 
           sleep 30
@@ -85,7 +63,7 @@ jobs:
           check_count=1
           while [ $check_count -le 5]
           do 
-            backup_ready=$(aws s3api head-object --bucket ${{ inputs.SOURCE_STAGING_BUCKET }} --key $backup_object || true)
+            backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
             if [ -z "$backup_ready"]; then
               echo "Backup not complete, wait for $wait_time seconds..."
               wait_time=$(( $wait_time * $check_count))
@@ -93,7 +71,7 @@ jobs:
               check_count=$(( $check_count + 1))
             else
               break
-              echo "AMI backed up to object s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object."
+              echo "AMI backed up to object s3://$SOURCE_STAGING_BUCKET/$backup_object."
             fi
           done
           echo "describing storage image task"
@@ -101,9 +79,9 @@ jobs:
 
       - name: Download AMI backup object to workspace
         run: |
-          aws s3 cp s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object ${{ github.workspace }} --region ${{ inputs.AWS_DEFAULT_REGION }} --no-progress
+          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
           echo "Delete AMI backup file from S3."
-          aws s3 rm s3://${{ inputs.SOURCE_STAGING_BUCKET }}/$backup_object
+          aws s3 rm s3://$SOURCE_STAGING_BUCKET/$backup_object
 
           
       - name: Configure AWS credentials from Test account2
@@ -115,11 +93,11 @@ jobs:
           
       - name: Upload AMI backup file $backup_object to the staging bucket.
         run: |      
-          aws s3 cp ${{ github.workspace }}/$backup_object s3://${{ inputs.DESTINATION_STAGING_BUCKET }}/$backup_object --sse --no-progress
+          aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/$backup_object --sse --no-progress
           
       - name: Create restore AMI task
         run : |
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $backup_object --bucket ${{ inputs.DESTINATION_STAGING_BUCKET }} --name "Temporary copy of $amiID")
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $backup_object --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
           cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
 
           echo "Wait for the temporary image to become available."
@@ -130,7 +108,7 @@ jobs:
 
           while [ $check_count -le 10]
           do 
-            temporary_ami_details=$(aws ec2 describe-image --region $ {{ inputs.DESTINATION_REGION }} --image-ids $cn_temporary_image_id)
+            temporary_ami_details=$(aws ec2 describe-image --region $DESTINATION_REGION --image-ids $cn_temporary_image_id)
             temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")
 
             if [ "$temporary_ami_state" == "pending"]; then

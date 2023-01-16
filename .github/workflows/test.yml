@@ -2,6 +2,10 @@ name: "Copy ami to us"
 
 on:
   workflow_dispatch:    
+  push:
+    branches:
+      - main
+        
 
   
 
@@ -57,6 +61,8 @@ jobs:
           sudo apt-get install -y jq
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID \
             --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
+          echo $restore_ami_task_output
+          
           cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
           
           echo $cn_temporary_image_id

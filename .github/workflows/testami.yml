@@ -70,7 +70,7 @@ jobs:
       - name: Download AMI backup object to workspace
         continue-on-error: true
         run: |
-          aws s3 cp s3://$SOURCE_STAGING_BUCKET/amiID.bin ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
+          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$amiID.bin ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
           echo "Delete AMI backup file from S3."
           aws s3 rm s3://$SOURCE_STAGING_BUCKET/$amiID.bin
 
@@ -85,7 +85,7 @@ jobs:
       - name: Upload AMI backup file $backup_object to the staging bucket.
         continue-on-error: true
         run: |      
-          aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/$backup_object --sse --no-progress
+          aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/$amiID.bin --sse --no-progress
           
       - name: Create restore AMI task
         continue-on-error: true

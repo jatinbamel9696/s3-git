@@ -59,8 +59,9 @@ jobs:
         run : |
           echo "Installing jq..."
           sudo apt-get install -y jq
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID \
-            --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin \
+            --bucket source-bucket-test-jatin --name "Temporary copy of ami-05906b1d85ba23270.bin")
+          
           echo $restore_ami_task_output
           
           cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
@@ -75,7 +76,7 @@ jobs:
 
           while [ $check_count -le 10 ]
           do 
-            temporary_ami_details=$(aws ec2 describe-image --region $DESTINATION_REGION \
+            temporary_ami_details=$(aws ec2 describe-images --region us-east-1 \
               --image-ids $cn_temporary_image_id)
             temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")
 

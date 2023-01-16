@@ -22,7 +22,7 @@ on:
         type: string
         description: "region of the destination staging bucket"
         required: false
-        default: "us-east-1
+        default: "us-east-1"
 
         
 jobs:

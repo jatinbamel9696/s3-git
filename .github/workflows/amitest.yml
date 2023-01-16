@@ -1,0 +1,91 @@
+name: "Copy ami to us"
+
+on:
+  workflow_dispatch:    
+  push:
+    branches:
+      - main
+  
+
+        
+jobs:
+  deploy:
+    name: "Test"
+    runs-on: ubuntu-latest
+    env:	
+      AWS_ACCESS_KEY_ID: ${{  secrets.AWS_ACCESS_KEY_ID  }}
+      AWS_SECRET_ACCESS_KEY: ${{  secrets.AWS_SECRET_ACCESS_KEY  }}
+      AWS_REGION: 'us-east-1'
+      AWS_ACCESS_KEY_ID1: ${{  secrets.AWS_ACCESS_KEY_ID1  }}
+      AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
+      SOURCE_STAGING_BUCKET: "test-ami-jatin"
+      DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
+      DESTINATION_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
+      
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1' 
+      
+      - name: fetch latest ami id with tag value
+        continue-on-error: true
+        run: |
+          echo "fetching ami id"
+          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          amiID=$(cat 'ami_id')
+          echo $amiID
+          echo "amiID=$amiID" >> $GITHUB_ENV         
+          
+         
+      - name: Configure AWS credentials from Test account2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID1 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY1 }}
+          aws-region: 'us-east-1'
+          
+        
+      - name: Create restore AMI task
+        continue-on-error: true
+        run : |
+          echo "Installing jq..."
+          sudo apt-get install -y jq
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID \
+            --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
+          cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
+          
+          echo $cn_temporary_image_id
+
+          echo "Wait for the temporary image to become available."
+          wait_time=300
+          sleep $wait_time
+          check_count=1
+          temporary_ami_ready=false
+
+          while [ $check_count -le 10 ]
+          do 
+            temporary_ami_details=$(aws ec2 describe-image --region $DESTINATION_REGION \
+              --image-ids $cn_temporary_image_id)
+            temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")
+
+            if [ "$temporary_ami_state" == "pending" ]; then
+              echo "AMI creation pending, wait for $wait_time seconds..."
+              sleep $wait_time
+              check_count =$(( $check_count +1 ))
+              
+            elif ["$temporary_ami_state" == "available"]; then
+              temporary_ami_ready=true
+              break
+
+            else
+              echo "AMI creation state: $temporary_ami_state"
+              exit 1
+            fi 
+          done  

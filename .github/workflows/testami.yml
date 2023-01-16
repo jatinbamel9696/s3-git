@@ -95,10 +95,12 @@ jobs:
           aws-region: 'us-east-1'
           
       - name: Upload AMI backup file $backup_object to the staging bucket.
+        continue-on-error: true
         run: |      
           aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/$backup_object --sse --no-progress
           
       - name: Create restore AMI task
+        continue-on-error: true
         run : |
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $backup_object --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")
           cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")

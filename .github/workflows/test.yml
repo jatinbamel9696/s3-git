@@ -90,7 +90,7 @@ jobs:
               break
 
             else
-              echo "AMI creation state: $temporary_ami_state"
+              echo done
               exit 1
             fi 
           done  

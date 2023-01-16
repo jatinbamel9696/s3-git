@@ -54,13 +54,15 @@ jobs:
       - name: fetch latest ami id with tag value
         run: |
           echo "fetching ami id"
-          aws ec2 describe-images -- region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID
           echo "amiID=$amiID" >> $GITHUB_ENV         
           
       - name: ec2 create-store-image-task
         run: |
+          echo "Installing jq..."
+          sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
           backup_ami_task_output=$( aws ec2 create-store-image-task --image-id $amiID --bucket ${{ inputs.SOURCE_STAGING_BUCKET }})
           backup_object=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")

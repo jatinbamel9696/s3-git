@@ -55,7 +55,7 @@ jobs:
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Backup AMI $amiID to S3"
-          backup_ami_task_output=$( aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
+          backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
           echo "$backup_ami_task_output"
           backup_object=$(jq -r ".ObjectKey <<< "${backup_ami_task_output}")
           echo "$backup_object"
@@ -63,21 +63,19 @@ jobs:
           sleep 30
           wait_time=30
           check_count=1
-          while [ $check_count -le 5]
+          while [$check_count -le 5]
           do 
             backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
-            if [ "$backup_ready"]; then
+            if ["$backup_ready"]; then
               echo "Backup not complete, wait for $wait_time seconds..."
-              wait_time=$(( $wait_time * $check_count))
+              wait_time=$(($wait_time * $check_count))
               sleep $wait_time
-              check_count=$(( $check_count + 1))
+              check_count=$(($check_count + 1))
             else
               break
               echo "AMI backed up to object s3://$SOURCE_STAGING_BUCKET/$backup_object"
             fi
           done
-          echo "describing storage image task"
-          aws ec2 describe-store-image-tasks
 
       - name: Download AMI backup object to workspace
         run: |
@@ -108,7 +106,7 @@ jobs:
           check_count=1
           temporary_ami_ready=false
 
-          while [ $check_count -le 10]
+          while [$check_count -le 10]
           do 
             temporary_ami_details=$(aws ec2 describe-image --region $DESTINATION_REGION --image-ids $cn_temporary_image_id)
             temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")
@@ -117,7 +115,7 @@ jobs:
               echo "AMI creation pending, wait for $wait_time seconds..."
               sleep $wait_time
               check_count =$(( $check_count +1 ))
-            elif [ "$temporary_ami_state" == "available" ]; then
+            elif ["$temporary_ami_state" == "available"]; then
               temporary_ami_ready=true
               break
 

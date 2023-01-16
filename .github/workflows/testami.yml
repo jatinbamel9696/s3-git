@@ -40,6 +40,13 @@ jobs:
       AWS_REGION: 'us-east-1'
       AWS_ACCESS_KEY_ID1: ${{  secrets.AWS_ACCESS_KEY_ID1  }}
       AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
+      SOURCE_STAGING_BUCKET: "test-ami-jatin"
+      DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
+      DESTINATION_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
+      
+      
+      
       
       
       
@@ -57,7 +64,7 @@ jobs:
         run: |
           echo "fetching ami id"
           echo ${{ inputs.AWS_DEFAULT_REGION }}
-          echo "testing ${{ inputs.SOURCE_STAGING_BUCKET }}"
+          echo "testing $SOURCE_STAGING_BUCKET"
           
           
           aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id

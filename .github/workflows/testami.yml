@@ -22,12 +22,9 @@ on:
         type: string
         description: "region of the destination staging bucket"
         required: false
-        default: "us-east-1"
-  push:
-    branches:
-      - main
-  
+        default: "us-east-1
 
+        
 jobs:
   deploy:
     name: "Test"

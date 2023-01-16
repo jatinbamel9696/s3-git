@@ -56,7 +56,10 @@ jobs:
       - name: fetch latest ami id with tag value
         run: |
           echo "fetching ami id"
-          echo (${{ inputs.AWS_DEFAULT_REGION }})
+          echo ${{ inputs.AWS_DEFAULT_REGION }}
+          echo "testing ${{ inputs.SOURCE_STAGING_BUCKET }}"
+          
+          
           aws ec2 describe-images --region ${{ inputs.AWS_DEFAULT_REGION }} --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID

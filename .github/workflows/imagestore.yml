@@ -48,16 +48,19 @@ jobs:
           echo "Installing jq..."
           sudo apt-get install -y jq
           backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
-          backup_object=$(jq -r ".ObjectKey" << "${backup_ami_task_output}")
+          backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
+          backup_object1=$(jq -r '.ObjectKey' <<< "${backup_ami_task_output}")
           echo "done"
           echo $backup_ami_task_output
           echo $backup_object
+          echo "backup1"
+          echo $backup_object1
           sleep 30
           wait_time=30
           check_count=1
           while [ $check_count -le 5 ]
           do
-            backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $amiID.bin || true)
+            backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
             if [ -z "$backup_ready" ]; then
               echo "Backup not complete, wait for $wait_time seconds"
               wait_time=$(( $wait_time * $check_count ))

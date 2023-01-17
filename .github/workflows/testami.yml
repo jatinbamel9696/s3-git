@@ -75,7 +75,7 @@ jobs:
           #aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
           
           echo "Create restore AMI task."
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID1")
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary ami copy  $amiID")
           cn_temp_image_id=$(jq -r ".ImageID" <<< "${restore_ami_task_output}")
 
           echo "Wait for the temporary image to become available."

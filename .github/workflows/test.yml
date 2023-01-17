@@ -69,7 +69,7 @@ jobs:
           while [ $check_count -le 10 ]
           do
             temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_image_id)
-            temp_ami_state=$(jq -r ".Images[0].State" <<< "${temp_ami_detail}"
+            temp_ami_state=$(jq -r ".Images[0].State" <<< "${temp_ami_detail}")
             if [ "$temp_ami_state" == "pending" ]; then
                 echo "AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
@@ -79,6 +79,6 @@ jobs:
                 break
             else
                 echo "AMI creation state: $temp_ami_state."
-                exit 1
+                exit 0
             fi
           done

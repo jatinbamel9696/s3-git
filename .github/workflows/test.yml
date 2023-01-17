@@ -2,6 +2,9 @@ name: "Copy ami to us"
 
 on:
   workflow_dispatch:    
+  push:
+    branches:
+      - main
 
         
 
@@ -59,7 +62,7 @@ jobs:
           sudo apt-get install -y jq
           echo "Create restore ami task"
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin --bucket "source-bucket-test-jatin" --name "Temporary copy of ami-05906b1d85ba23270.bin")
-          cn_temp_image_id=$(jq -r ".ImageID" <<< "${restore_ami_task_output}")
+          cn_temp_image_id=$(jq -r '.ImageID' <<< "${restore_ami_task_output}")
           echo "Wait for the temporary image to become available."
           wait_time=300
           sleep $wait_time

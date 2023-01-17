@@ -59,7 +59,7 @@ jobs:
           cn_temp_image_id=$(jq -r '.ImageId' <<< "${restore_ami_task_output}")
           #cn_temp_id=$(echo $restore_ami_task_output|jq -r '.ImageId')
           echo "Wait for the temporary image to become available."
-          wait_time=100
+          wait_time=200
           sleep $wait_time
           check_count=1
           temp_ami_ready=false

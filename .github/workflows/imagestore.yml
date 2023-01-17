@@ -55,7 +55,7 @@ jobs:
           sleep 30
           wait_time=30
           check_count=1
-          while [ $check_count -le 5]
+          while [ $check_count -le 5 ]
           do
             backup_ready=$(aws s3 api head-object --bucket $SOURCE_STAGING_BUCKET --key $amiID.bin || true)
             if [ -z "$backup_ready"]; then

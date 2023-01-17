@@ -59,38 +59,28 @@ jobs:
         run : |
           echo "Installing jq..."
           sudo apt-get install -y jq
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin \
-            --bucket source-bucket-test-jatin --name "Temporary copy of ami-05906b1d85ba23270.bin")
-          
-          echo $restore_ami_task_output
-          
-          cn_temporary_image_id=$(jq -r ".ImageID <<< "${restore_ami_task_output}")
-          
-          echo $cn_temporary_image_id
-
+          echo "Create restore ami task"
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin --bucket "source-bucket-test-jatin" --name "Temporary copy of ami-05906b1d85ba23270.bin")
+          cn_temp_image_id=$(jq -r ".ImageID" <<< "${restore_ami_task_output}")
           echo "Wait for the temporary image to become available."
           wait_time=300
           sleep $wait_time
           check_count=1
-          temporary_ami_ready=false
+          temp_ami_ready=false
 
           while [ $check_count -le 10 ]
-          do 
-            temporary_ami_details=$(aws ec2 describe-images --region us-east-1 \
-              --image-ids $cn_temporary_image_id)
-            temporary_ami_state=$(jq -r ".Images[0].State" <<< "${temporary_ami_detail}")
-
-            if [ "$temporary_ami_state" == "pending" ]; then
-              echo "AMI creation pending, wait for $wait_time seconds..."
-              sleep $wait_time
-              check_count =$(( $check_count +1 ))
-              
-            elif ["$temporary_ami_state" == "available"]; then
-              temporary_ami_ready=true
-              break
-
+          do
+            temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_image_id)
+            temp_ami_state=$(jq -r ".Images[0].State" <<< "${temp_ami_detail}"
+            if [ "$temp_ami_state" == "pending" ]; then
+                echo "AMI creation pending, wait for $wait_time seconds..."
+                sleep $wait_time
+                check_count=$(( $check_count + 1 ))
+            elif ["$temp_ami_state" == "available"]; then
+                temp_ami_ready=true
+                break
             else
-              echo done
-              exit 1
-            fi 
-          done  
+                echo "AMI creation state: $temp_ami_state."
+                exit 1
+            fi
+          done

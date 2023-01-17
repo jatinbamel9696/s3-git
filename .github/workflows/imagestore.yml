@@ -1,0 +1,69 @@
+name: "Image store task"
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: "Test"
+    runs-on: ubuntu-latest
+    env:	
+      AWS_ACCESS_KEY_ID: ${{  secrets.AWS_ACCESS_KEY_ID  }}
+      AWS_SECRET_ACCESS_KEY: ${{  secrets.AWS_SECRET_ACCESS_KEY  }}
+      AWS_REGION: 'us-east-1'
+      AWS_ACCESS_KEY_ID1: ${{  secrets.AWS_ACCESS_KEY_ID1  }}
+      AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
+      SOURCE_STAGING_BUCKET: "test-ami-jatin"
+      DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
+      DESTINATION_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
+      
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1' 
+      
+      - name: fetch latest ami id with tag value
+        continue-on-error: true
+        run: |
+          echo "fetching ami id"
+          echo "testing $SOURCE_STAGING_BUCKET"
+          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          amiID=$(cat 'ami_id')
+          echo $amiID
+          echo "amiID=$amiID" >> $GITHUB_ENV       
+                    
+      - name: ec2 create-store-image-task
+        continue-on-error: true
+        run: |
+          echo "Installing jq..."
+          sudo apt-get install -y jq
+          backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
+          backup_object=$(jq -r ".Objectkey" <<< "${backup_ami_task_output}")
+          echo "done"
+          echo $backup_object
+          sleep 30
+          wait_time=30
+          check_count=1
+          while [ $check_count -le 5]
+          do
+            backup_ready=$(aws s3 api head-object --bucket $SOURCE_STAGING_BUCKET --key $amiID.bin || true)
+            if [ -z "$backup_ready"]; then
+              echo "Backup not complete, wait for $wait_time seconds"
+              wait_time=$(( $wait_time * $check_count))
+              sleep $wait_time
+              check_count=$(( $check_count + 1 ))
+            else
+              break
+              echo "AMI backed up to objec s3://$SOURCE_STAGING_BUCKET/$amiID.bin"
+            fi
+          done

@@ -63,6 +63,9 @@ jobs:
           echo "Create restore ami task"
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin --bucket "source-bucket-test-jatin" --name "Temporary copy of ami-05906b1d85ba23270.bin")
           cn_temp_image_id=$(jq -r '.ImageID' <<< "${restore_ami_task_output}")
+          cn_temp_id=$(echo $restore_ami_task_output|jq -r '.ImageID')
+          echo "cn_temp_id= $cn_temp_id"
+          echo $cn_temp_image_id
           echo "Wait for the temporary image to become available."
           wait_time=200
           sleep $wait_time
@@ -71,8 +74,11 @@ jobs:
 
           while [ $check_count -le 10 ]
           do
-            temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_image_id)
+            temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_id)
+            temp_ami_state1=$(echo $temp_ami_detail|jq -r ''.Images[0].State')
+            echo $temp_ami_state1
             temp_ami_state=$(jq -r '.Images[0].State' <<< "${temp_ami_detail}")
+            echo "temp_ami_state= $temp_ami_state"
             if [ "$temp_ami_state" == "pending" ]; then
                 echo "AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
@@ -82,6 +88,6 @@ jobs:
                 break
             else
                 echo "AMI creation state: $temp_ami_state."
-                exit 0
+                exit 1
             fi
           done

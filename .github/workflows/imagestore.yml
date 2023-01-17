@@ -50,6 +50,7 @@ jobs:
           backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
           backup_object=$(jq -r ".Objectkey" <<< "${backup_ami_task_output}")
           echo "done"
+          echo $backup_ami_task_output
           echo $backup_object
           sleep 30
           wait_time=30

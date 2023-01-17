@@ -72,7 +72,7 @@ jobs:
       - name: Upload AMI backup file $amiID to the staging bucket.
         continue-on-error: true
         run: |      
-          aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
+          #aws s3 cp ${{ github.workspace }}/$amiID.bin s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
           
           echo "Create restore AMI task."
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID")

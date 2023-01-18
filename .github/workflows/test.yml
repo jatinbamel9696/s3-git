@@ -1,7 +1,10 @@
 name: "Copy ami to us"
 
 on:
-  workflow_dispatch:    
+  workflow_dispatch:  
+  push:
+    branches:
+      - main  
        
 jobs:
   deploy:
@@ -20,8 +23,7 @@ jobs:
       
       
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -30,7 +32,6 @@ jobs:
           aws-region: 'us-east-1' 
       
       - name: fetch latest ami id with tag value
-        continue-on-error: true
         run: |
           echo "fetching ami id"
           aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
@@ -48,25 +49,28 @@ jobs:
           
         
       - name: Create restore AMI task
-        continue-on-error: true
         run : |
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Create restore ami task"
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key ami-05906b1d85ba23270.bin --bucket "source-bucket-test-jatin" --name "Temporary copy of ami-05906b1d85ba23270.bin")
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID.bin")
+          echo $restore_ami_task_output
           cn_temp_image_id=$(jq -r '.ImageId' <<< "${restore_ami_task_output}")
-          #cn_temp_id=$(echo $restore_ami_task_output|jq -r '.ImageId')
+          cn_temp_id=$(echo $restore_ami_task_output|jq -r '.ImageId')
+          echo $cn_temp_image_id
           echo "Wait for the temporary image to become available."
           wait_time=200
           sleep $wait_time
           check_count=1
           temp_ami_ready=false
-
           while [ $check_count -le 10 ]
           do
             echo "Describe image restore task"
             temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_image_id)
+            temp_ami_state1=$(echo $temp_ami_detail|jq -r '.Images[0].State')
+            echo $temp_ami_state1
             temp_ami_state=$(jq -r '.Images[0].State' <<< "${temp_ami_detail}")
+            echo "temp_ami_state= $temp_ami_state"
             if [ "$temp_ami_state" == "pending" ]; then
                 echo "AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
@@ -76,6 +80,6 @@ jobs:
                 break
             else
                 echo "AMI creation state: $temp_ami_state."
-                exit 1
+                exit 0
             fi
           done

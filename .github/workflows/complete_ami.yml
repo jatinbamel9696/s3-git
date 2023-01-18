@@ -2,9 +2,7 @@ name: "Complete ami copy"
 
 on:
   workflow_dispatch: 
-  push:
-    branches:
-      - main
+
 
 jobs:
   deploy:
@@ -111,7 +109,7 @@ jobs:
                 echo "AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
                 check_count=$(( $check_count + 1 ))
-            elif ["$temp_ami_state" == "available"]; then
+            elif [ "$temp_ami_state" == "available" ]; then
                 temp_ami_ready=true
                 break
             else

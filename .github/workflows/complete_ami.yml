@@ -156,7 +156,7 @@ jobs:
                 encrypted_cn_ami_ready=true
                 break
             else
-                echo "AMI creation state: $encrypted_cn_ami_state."
+                echo "AMI creation state= $temp_ami_state."
                 exit 0
             fi
           done

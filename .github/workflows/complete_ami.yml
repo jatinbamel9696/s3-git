@@ -57,7 +57,7 @@ jobs:
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Backup $amiID to s3"
-          #backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
+          backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
           backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
           #backup_object1=$(jq -r '.ObjectKey' <<< "${backup_ami_task_output}")
           echo $backup_ami_task_output

@@ -2,9 +2,7 @@ name: "Complete ami copy"
 
 on:
   workflow_dispatch: 
-  push:
-    branches:
-      - main 
+
 
 
 jobs:
@@ -136,7 +134,7 @@ jobs:
 
 
 
-          if [ "temporary_ami _ready" = true ]; then
+          if [ "temporary_ami_ready" = true ]; then
             echo "Temporary unencrypted AMI created: $cn_temporary_image_id." 
             echo "Copy the temporary AMI and encrypt it."
             copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION \

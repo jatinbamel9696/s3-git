@@ -1,7 +1,10 @@
 name: "Copy ami to us"
 
 on:
-  workflow_dispatch:  
+  workflow_dispatch:
+  push:
+    branches:
+      - main   
    
        
 jobs:
@@ -35,7 +38,17 @@ jobs:
           aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID
-          echo "amiID=$amiID" >> $GITHUB_ENV         
+          echo "amiID=$amiID" >> $GITHUB_ENV     
+
+          echo "Describe image $amiID"  
+          image_data=$(aws ec2 describe-images --region $AWS_DEFAULT_REGION --image-ids $amiID)
+          echo $image_data
+          image_name=$(jq -r '.Images[0].Name' <<< "${image_data}")
+          echo $image_name
+          image_description=$(jq -r '.Images[0].Description' <<< "${image_data}")
+          echo $image_description
+          echo "image_name=$image_name" >> $GITHUB_ENV
+          echo "image_description=$image_description" >> $GITHUB_ENV   
           
          
       - name: Configure AWS credentials from Test account2
@@ -48,10 +61,11 @@ jobs:
         
       - name: Create restore AMI task
         run : |
+          backup_object=ami-05906b1d85ba23270.bin
           echo "Installing jq..."
           sudo apt-get install -y jq
           echo "Create restore ami task"
-          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $amiID.bin --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $amiID.bin")
+          restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $backup_object --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $backup_object")
           echo $restore_ami_task_output
           cn_temp_image_id=$(jq -r '.ImageId' <<< "${restore_ami_task_output}")
           cn_temp_id=$(echo $restore_ami_task_output|jq -r '.ImageId')
@@ -64,7 +78,7 @@ jobs:
           while [ $check_count -le 10 ]
           do
             echo "Describe image restore task"
-            temp_ami_detail=$(aws ec2 describe-images --region us-east-1 --image-ids $cn_temp_image_id)
+            temp_ami_detail=$(aws ec2 describe-images --region $DESTINATION_REGION --image-ids $cn_temp_image_id)
             temp_ami_state1=$(echo $temp_ami_detail|jq -r '.Images[0].State')
             echo $temp_ami_state1
             temp_ami_state=$(jq -r '.Images[0].State' <<< "${temp_ami_detail}")
@@ -81,3 +95,39 @@ jobs:
                 exit 0
             fi
           done
+
+
+
+          if [ "temporary_ami_ready" = true ]; then
+            echo "Temporary unencrypted AMI created: $cn_temporary_image_id." 
+            echo "Copy the temporary AMI and encrypt it."
+            copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION \
+              --name "$image_name" --source-region $DESTINATION REGION \
+              --source-image-id $cn_temporary_image_id --description "$image_description"\
+              --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
+            encrypted_cn_ami_id=$(jq -r '.ImageID' <<< "${copy_image_output}")
+
+            echo "Wait for the encrypted image to become avaialable."
+            check_count=1
+            encrypted_cn_ami_ready=false
+            while [ $check_count -le 10 ]
+            do 
+              encrypted_cn_ami_detail=$(aws ec2 describe-images --region $DESTINATION_REGION --image-ids $encrypted_cn_ami_id)
+              encrypted_cn_ami_state=$(jq -r '.Images[0].State' <<< "${encrypted_cn_ami_detail}")
+
+              if [ "$encrypted_cn_ami_state" == "pending" ]; then
+                echo "Encrypted AMI creation pending, wait for $wait_time seconds..."
+                sleep $wait_time
+                check_count=$(( $check_count + 1 ))
+              elif [ "$encrypted_cn_ami_state" == "available" ]; then
+                encrypted_cn_ami_ready=true
+                break
+              else
+                echo "AMI creation state= $temp_ami_state."
+                exit 0
+              fi
+            done
+          else
+            echo "Temporary AMI restore wait timeout"
+            exit 0
+          fi

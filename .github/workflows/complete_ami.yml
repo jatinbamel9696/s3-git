@@ -145,23 +145,28 @@ jobs:
               --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
             encrypted_cn_ami_id=$(jq -r '.ImageID' <<< "${copy_image_output}")
 
-          echo "Wait for the encrypted image to become avaialable."
-          check_count=1
-          encrypted_cn_ami_ready=false
-          while [ $check_count -le 10 ]
-          do 
-           encrypted_cn_ami_detail=$(aws ec2 describe-images --region $DESTINATION_REGION --image-ids $encrypted_cn_ami_id)
-           encrypted_cn_ami_state=$(jq -r '.Images[0].State' <<< "${encrypted_cn_ami_detail}")
+            echo "Wait for the encrypted image to become avaialable."
+            check_count=1
+            encrypted_cn_ami_ready=false
+            while [ $check_count -le 10 ]
+            do 
+              encrypted_cn_ami_detail=$(aws ec2 describe-images --region $DESTINATION_REGION --image-ids $encrypted_cn_ami_id)
+              encrypted_cn_ami_state=$(jq -r '.Images[0].State' <<< "${encrypted_cn_ami_detail}")
 
-           if [ "$encrypted_cn_ami_state" == "pending" ]; then
+              if [ "$encrypted_cn_ami_state" == "pending" ]; then
                 echo "Encrypted AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
                 check_count=$(( $check_count + 1 ))
-            elif [ "$encrypted_cn_ami_state" == "available" ]; then
+              elif [ "$encrypted_cn_ami_state" == "available" ]; then
                 encrypted_cn_ami_ready=true
                 break
-            else
+              else
                 echo "AMI creation state= $temp_ami_state."
                 exit 0
-            fi
-          done
+              fi
+            done
+          else
+            echo "Temporary AMI restore wait timeout"
+            exit 0
+          fi
+        

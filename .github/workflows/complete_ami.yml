@@ -42,7 +42,7 @@ jobs:
           echo "amiID=$amiID" >> $GITHUB_ENV  
 
           echo "Describe image $amiID"  
-          image_data=$(aws ec2 describe-images --region $AWS_DEFAULT_REGION --images-ids $amiID)
+          image_data=$(aws ec2 describe-images --region $AWS_DEFAULT_REGION --image-ids $amiID)
           echo $image_data
           image_name=$(jq -r '.Images[0].Name' <<< "${image_data}")
           echo $image_name

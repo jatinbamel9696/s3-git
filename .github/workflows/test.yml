@@ -136,7 +136,12 @@ jobs:
               #aws s3 rm s3://$DESTINATION_STAGING_BUCKET/$backup_object
 
               echo "Deregister the temporary AMI $cn_temp_image_id"
+              Snapshots="$(aws ec2 describe-images --image-ids $cn_temp_image_id --region $DESTINATION_REGION /
+                 --query 'Images[*].BlockDeviceMappings[*].Ebs.SnapshotId' --output text)"
+              echo $Snapshots
               aws ec2 deregister-image --image-id $cn_temp_image_id
+              for SNAPSHOT in $Snapshots ; do aws ec2 delete-snapshot --snapshot-id $Snapshots; done
+
             else
               echo "Encrypted AMI creation wait timeout"
               exit 1

@@ -58,10 +58,9 @@ jobs:
           sudo apt-get install -y jq
           echo "Backup $amiID to s3"
           #backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
-          #backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
+          backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
           #backup_object1=$(jq -r '.ObjectKey' <<< "${backup_ami_task_output}")
           echo $backup_ami_task_output
-          backup_object=ami-05906b1d85ba23270
           echo $backup_object
           echo "backup_object=$backup_object" >>$GITHUB_ENV
           sleep 30
@@ -84,7 +83,7 @@ jobs:
       - name: Download AMI backup object to workspace
         continue-on-error: true
         run: |
-          #aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
+          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
           echo "Delete AMI backup file from S3."
           #aws s3 rm s3://$SOURCE_STAGING_BUCKET/$amiID
 
@@ -99,7 +98,7 @@ jobs:
         continue-on-error: true
         run: |  
           echo "Upload AMI backup file to the staging bucket"    
-          #aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
+          aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
           
       - name: restore image task to another account
         run : |

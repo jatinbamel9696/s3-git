@@ -109,21 +109,39 @@ jobs:
             while [ $check_count -le 10 ]
             do 
               encrypted_cn_ami_detail=$(aws ec2 describe-images --region $DESTINATION_REGION --image-ids $encrypted_cn_ami_id)
+              echo $encrypted_cn_ami_detail
               encrypted_cn_ami_state=$(jq -r '.Images[0].State' <<< "${encrypted_cn_ami_detail}")
+              echo $encrypted_cn_ami_state
 
               if [ "$encrypted_cn_ami_state" == "pending" ]; then
                 echo "Encrypted AMI creation pending, wait for $wait_time seconds..."
                 sleep $wait_time
                 check_count=$(( $check_count + 1 ))
+
               elif [ "$encrypted_cn_ami_state" == "available" ]; then
                 encrypted_cn_ami_ready=true
                 break
+
               else
                 echo "AMI creation state= $encrypted_cn_ami_state."
                 exit 1
               fi
             done
-          else
+
+            if [ "$encrypted_cn_ami_ready" = true ]; then
+
+              echo "Encrypted AMI created in account test account 2 and encrypted ami id = $encrypted_cn_ami_id"
+
+              echo "Delete AMI backup file from s3"
+              #aws s3 rm s3://$DESTINATION_STAGING_BUCKET/$backup_object
+
+              echo "Deregister the temporary AMI $cn_temp_image_id"
+              aws ec2 deregister-image --image-id $cn_temp_image_id
+            else
+              echo "Encrypted AMI creation wait timeout"
+              exit 1
+            fi  
+          else  
             echo "Temporary AMI restore wait timeout"
             exit 1
           fi

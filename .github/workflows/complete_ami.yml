@@ -2,7 +2,9 @@ name: "Complete ami copy"
 
 on:
   workflow_dispatch: 
-
+  push:
+    branches:
+      - main 
 
 
 jobs:
@@ -100,6 +102,8 @@ jobs:
           
       - name: restore image task to another account
         run : |
+          echo "Installing jq..."
+          sudo apt-get install -y jq
           echo "Create restore ami task"
           restore_ami_task_output=$(aws ec2 create-restore-image-task --object-key $backup_object --bucket $DESTINATION_STAGING_BUCKET --name "Temporary copy of $backup_object")
           echo $restore_ami_task_output
@@ -132,15 +136,10 @@ jobs:
             fi
           done
 
-
-
-          if [ "temporary_ami_ready" = true ]; then
-            echo "Temporary unencrypted AMI created: $cn_temporary_image_id." 
+          if [ "temp_ami_ready" = true ]; then
+            echo "Temporary unencrypted AMI created: $cn_temp_image_id." 
             echo "Copy the temporary AMI and encrypt it."
-            copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION \
-              --name "$image_name" --source-region $DESTINATION REGION \
-              --source-image-id $cn_temporary_image_id --description "$image_description"\
-              --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
+            copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION --name "$image_name" --source-region $DESTINATION REGION --source-image-id $cn_temp_image_id --description "$image_description" --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
             encrypted_cn_ami_id=$(jq -r '.ImageID' <<< "${copy_image_output}")
 
             echo "Wait for the encrypted image to become avaialable."
@@ -167,4 +166,3 @@ jobs:
             echo "Temporary AMI restore wait timeout"
             exit 0
           fi
-        

@@ -52,6 +52,7 @@ jobs:
           echo "image_description=$image_description" >> $GITHUB_ENV
 
       - name: ec2 create-store-image-task
+        continue-on-error: true
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
@@ -80,8 +81,9 @@ jobs:
           done
 
       - name: Download AMI backup object to workspace
+        continue-on-error: true
         run: |
-          aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
+          #aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
           echo "Delete AMI backup file from S3."
           #aws s3 rm s3://$SOURCE_STAGING_BUCKET/$amiID
 
@@ -93,9 +95,10 @@ jobs:
           aws-region: 'us-east-1'
 
       - name: Upload AMI backup file to the staging bucket.
+        continue-on-error: true
         run: |  
           echo "Upload AMI backup file to the staging bucket"    
-          aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
+          #aws s3 cp ${{ github.workspace }}/$backup_object s3://$DESTINATION_STAGING_BUCKET/ --sse --no-progress
           
       - name: restore image task to another account
         run : |
@@ -137,9 +140,9 @@ jobs:
             echo "Temporary unencrypted AMI created: $cn_temporary_image_id." 
             echo "Copy the temporary AMI and encrypt it."
             copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION \
-              -- name "$image_name" --source-region $DESTINATION REGION \
+              --name "$image_name" --source-region $DESTINATION REGION \
               --source-image-id $cn_temporary_image_id --description "$image_description"\
-              -- encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
+              --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
             encrypted_cn_ami_id=$(jq -r '.ImageID' <<< "${copy_image_output}")
 
           echo "Wait for the encrypted image to become avaialable."

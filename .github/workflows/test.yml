@@ -99,8 +99,9 @@ jobs:
           if [ "temp_ami_ready"=true ]; then
             echo "Temporary unencrypted AMI created: $cn_temp_image_id." 
             echo "Copy the temporary AMI and encrypt it."
-            copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION --name "$image_name" --source-region $DESTINATION_REGION --source-image-id $cn_temp_image_id --description "$image_description" --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
-            encrypted_cn_ami_id=$(jq -r '.ImageID' <<< "${copy_image_output}")
+            copy_image_output=$(aws ec2 copy-image --region $DESTINATION_REGION --name "$image_name" --source-region $DESTINATION_REGION --source-image-id $cn_temp_image_id --encrypted --kms-key-id alias/jatin-kms --copy-image-tags)
+            echo $copy_image_output
+            encrypted_cn_ami_id=$(jq -r '.ImageId' <<< "${copy_image_output}")
 
             echo "Wait for the encrypted image to become avaialable."
             check_count=1
@@ -118,7 +119,7 @@ jobs:
                 encrypted_cn_ami_ready=true
                 break
               else
-                echo "AMI creation state= $temp_ami_state."
+                echo "AMI creation state= $encrypted_cn_ami_state."
                 exit 1
               fi
             done

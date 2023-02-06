@@ -1,0 +1,68 @@
+name: "Artifact"
+
+on:
+  workflow_dispatch: 
+
+
+
+jobs:
+  deploy:
+    name: "AMI copy to cn"
+    runs-on: ubuntu-latest
+    env:	
+      AWS_ACCESS_KEY_ID: ${{  secrets.AWS_ACCESS_KEY_ID  }}
+      AWS_SECRET_ACCESS_KEY: ${{  secrets.AWS_SECRET_ACCESS_KEY  }}
+      AWS_REGION: 'us-east-1'
+      AWS_ACCESS_KEY_ID1: ${{  secrets.AWS_ACCESS_KEY_ID1  }}
+      AWS_SECRET_ACCESS_KEY1: ${{  secrets.AWS_SECRET_ACCESS_KEY1  }}
+      SOURCE_STAGING_BUCKET: "test-ami-jatin"
+      DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
+      DESTINATION_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
+      
+      
+    steps:
+
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1' 
+      
+      - name: fetch latest ami id with tag value
+        continue-on-error: true
+        run: |
+          echo "fetching ami id"
+          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          amiID=$(cat 'ami_id')
+          echo $amiID
+          echo "amiID=$amiID" >> $GITHUB_ENV  
+
+          echo "Describe image $amiID"  
+          image_data=$(aws ec2 describe-images --region $AWS_DEFAULT_REGION --image-ids $amiID)
+          echo $image_data
+          image_name=$(jq -r '.Images[0].Name' <<< "${image_data}")
+          echo $image_name
+          image_description=$(jq -r '.Images[0].Description' <<< "${image_data}")
+          echo $image_description
+          echo "image_name=$image_name" >> $GITHUB_ENV
+          echo "image_description=$image_description" >> $GITHUB_ENV
+
+      - name: ec2 create-store-image-task
+        continue-on-error: true
+        run: |
+          echo "Installing jq..."
+          sudo apt-get install -y jq
+          
+          artifact_ids=$(jq -r '.builds[0].artifact_id' ${{ github.workspace }}/mainfest.json)
+          IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
+          echo $artifact_ids
+
+
+
+
+          
+
+
+

@@ -22,6 +22,11 @@ jobs:
       
       
     steps:
+      - name: Download mainfest.json
+        id: download_mainfest
+        uses: actions/download_mainfest@v3
+        with:
+          name: mainfest
 
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1

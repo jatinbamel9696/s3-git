@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Download mainfest.json
         id: download_mainfest
-        uses: actions/download_mainfest@v3
+        uses: actions/download-artifact@v3
         with:
           name: mainfest
 

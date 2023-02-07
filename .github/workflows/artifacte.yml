@@ -60,13 +60,7 @@ jobs:
         with: 
           name: mainfest
           path: ${{ github.workspace }}/mainfest.json
-      /*
-      - name: Download mainfest.json
-        id: download_mainfest
-        uses: actions/download-artifact@v3
-        with:
-          name: mainfest
-      */
+
       - name: ec2 create-store-image-task
         continue-on-error: true
         run: |

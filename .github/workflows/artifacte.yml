@@ -54,12 +54,26 @@ jobs:
           echo "image_name=$image_name" >> $GITHUB_ENV
           echo "image_description=$image_description" >> $GITHUB_ENV
 
+      - name: Upload mainfest.json
+        id: upload_mainfest
+        uses: actions/upload-artifact@v3
+        with: 
+          name: mainfest
+          path: ${{ github.workspace }}/mainfest.json
+      
+      - name: Download mainfest.json
+        id: download_mainfest
+        uses: actions/download-artifact@v3
+        with:
+          name: mainfest
+
       - name: ec2 create-store-image-task
         continue-on-error: true
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
           
+          string="us-east-1:ami-0aac387abc139468d"
           artifact_ids=$(jq -r '.builds[0].artifact_id' ${{ github.workspace }}/mainfest.json)
           IFS=',' read -r -a artifact_ids_array <<< "$artifact_ids"
           echo $artifact_ids

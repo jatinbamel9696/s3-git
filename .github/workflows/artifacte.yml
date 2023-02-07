@@ -22,11 +22,6 @@ jobs:
       
       
     steps:
-      - name: Download mainfest.json
-        id: download_mainfest
-        uses: actions/download-artifact@v3
-        with:
-          name: mainfest
 
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
@@ -61,11 +56,19 @@ jobs:
           name: mainfest
           path: ${{ github.workspace }}/mainfest.json
 
+      
+      - name: Download mainfest.json
+        id: download_mainfest
+        uses: actions/download-artifact@v3
+        with:
+          name: mainfest
+      
       - name: ec2 create-store-image-task
         continue-on-error: true
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
+          cat mainfest.json
           
           string="us-east-1:ami-0aac387abc139468d"
           artifact_ids=$(jq -r '.builds[0].artifact_id' ${{ github.workspace }}/mainfest.json)

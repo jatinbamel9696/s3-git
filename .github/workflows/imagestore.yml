@@ -18,7 +18,7 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
-      AMI_NAME: "test abc (V1)"
+      AMI_NAME: test abc (V1)
 
 
       

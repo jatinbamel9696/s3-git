@@ -18,6 +18,9 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
+      AMI_NAME: "test abc (V1)"
+
+
       
       
     steps:
@@ -35,7 +38,7 @@ jobs:
         run: |
           echo "fetching ami id"
           echo "testing $SOURCE_STAGING_BUCKET"
-          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values=test*'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
+          aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters 'Name=tag:Name,Values="$AMI_NAME"'  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
           amiID=$(cat 'ami_id')
           echo $amiID
           echo "amiID=$amiID" >> $GITHUB_ENV       
@@ -63,7 +66,7 @@ jobs:
               echo "Backup not complete, wait for $wait_time seconds"
               wait_time=$(( $wait_time * $check_count ))
               sleep $wait_time
-              check_count=$(( $check_count + 1 ))
+              check_count=$(( $check_count + 2 ))
             else
               break
               echo "AMI backed up to objec s3://$SOURCE_STAGING_BUCKET/$amiID.bin"

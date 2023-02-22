@@ -18,7 +18,7 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
-      AMI_NAME: "test abc (V1)"
+      AMI_NAME: "test abc (V1"
 
 
       
@@ -36,6 +36,7 @@ jobs:
       - name: fetch latest ami id with tag value
         continue-on-error: true
         run: |
+          echo "(date +'%Y-%m-%dT%H:%M:%S')"
           echo "fetching ami id"
           echo "testing $SOURCE_STAGING_BUCKET"
           aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters Name=tag:Name,Values="$AMI_NAME"  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id

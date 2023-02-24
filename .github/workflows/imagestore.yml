@@ -18,7 +18,7 @@ jobs:
       DESTINATION_STAGING_BUCKET: "source-bucket-test-jatin"
       DESTINATION_REGION: "us-east-1"
       AWS_DEFAULT_REGION: "us-east-1"
-      AMI_NAME: "test abc (V1"
+      AMI_NAME: "test abc (V1)"
 
 
       
@@ -41,7 +41,6 @@ jobs:
       - name: fetch latest ami id with tag value
         continue-on-error: true
         run: |
-          echo date +'%Y-%m-%dT%H:%M:%S'
           echo "fetching ami id"
           echo "testing $SOURCE_STAGING_BUCKET"
           aws ec2 describe-images --region $AWS_DEFAULT_REGION --filters Name=tag:Name,Values="$AMI_NAME"  --query "sort_by(Images, &CreationDate)[-1].ImageId" --output text >ami_id
@@ -54,27 +53,35 @@ jobs:
         run: |
           echo "Installing jq..."
           sudo apt-get install -y jq
-          backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
-          backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
-          backup_object1=$(jq -r '.ObjectKey' <<< "${backup_ami_task_output}")
-          echo "done"
-          echo $backup_ami_task_output
-          echo $backup_object
-          echo "backup1"
-          echo $backup_object1
-          sleep 30
-          wait_time=30
-          check_count=1
-          while [ $check_count -le 5 ]
-          do
-            backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
-            if [ -z "$backup_ready" ]; then
-              echo "Backup not complete, wait for $wait_time seconds"
-              wait_time=$(( $wait_time * $check_count ))
-              sleep $wait_time
-              check_count=$(( $check_count + 2 ))
-            else
-              break
-              echo "AMI backed up to objec s3://$SOURCE_STAGING_BUCKET/$amiID.bin"
-            fi
-          done
+          echo "Check $amiID exist in bucket"
+          backup_exist=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $amiID.bin || true)
+          if [ -z "$backup_exist"]; then
+            echo "Backup ami $amiID to s3"
+            backup_ami_task_output=$(aws ec2 create-store-image-task --image-id $amiID --bucket $SOURCE_STAGING_BUCKET)
+            backup_object=$(echo $backup_ami_task_output|jq -r '.ObjectKey')
+            backup_object1=$(jq -r '.ObjectKey' <<< "${backup_ami_task_output}")
+            echo "done"
+            echo $backup_ami_task_output
+            echo $backup_object
+            echo "backup1"
+            echo $backup_object1
+            sleep 30
+            wait_time=30
+            check_count=1
+            while [ $check_count -le 5 ]
+            do
+              backup_ready=$(aws s3api head-object --bucket $SOURCE_STAGING_BUCKET --key $backup_object || true)
+              if [ -z "$backup_ready" ]; then
+                echo "Backup not complete, wait for $wait_time seconds"
+                wait_time=$(( $wait_time * $check_count ))
+                sleep $wait_time
+                check_count=$(( $check_count + 2 ))
+              else
+                break
+                echo "AMI backed up to objec s3://$SOURCE_STAGING_BUCKET/$amiID.bin"
+              fi
+            done
+          else
+            backup_object=$amiID.bin
+            echo "a backup already exist"
+          fi

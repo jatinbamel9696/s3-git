@@ -92,3 +92,4 @@ jobs:
           df -h
           echo "copy ami to workspace"
           aws s3 cp s3://$SOURCE_STAGING_BUCKET/$backup_object ${{ github.workspace }} --region $AWS_DEFAULT_REGION --no-progress
+          df -h

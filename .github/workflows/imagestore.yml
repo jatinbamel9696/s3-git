@@ -63,6 +63,7 @@ jobs:
             echo "done"
             echo $backup_ami_task_output
             echo $backup_object
+            echo "backup_object=$backup_object" >> $GITHUB_ENV
             echo "backup1"
             echo $backup_object1
             sleep 30
@@ -84,6 +85,7 @@ jobs:
           else
             backup_object=$amiID.bin
             echo "a backup already exist"
+            echo "backup_object=$backup_object" >> $GITHUB_ENV
           fi
       - name: Download AMI backup object to workspace
         continue-on-error: true

@@ -1,0 +1,19 @@
+if [ "$(aws ec2 describe-images --image-ids ${AMI_ID} --query 'Images[0].State' --output text --region ${SHARE_REGION} --profile ${CHINA_PROFILE} 2>/dev/null)" == "available" ]; then
+    echo "AMI ${AMI_ID} is already restored with same AMI Name"
+    exit 0
+fi
+
+# If the AMI is not already restored, proceed with the script
+echo "Latest AMI ID for '${AMI_NAME}': ${AMI_ID}"
+
+# Check if the AMI is already present in the S3 bucket
+if aws s3 ls "s3://${CHINA_BUCKET}/${AMI_ID}.bin" --profile "${CHINA_PROFILE}" 2>&1 | grep -q "${AMI_ID}.bin"; then
+  echo "AMI ID: ${AMI_ID} is already present in S3 bucket '${CHINA_BUCKET}' with China profile: ${CHINA_PROFILE}"
+else
+  # Copy the AMI to the China account using China profile of credential
+  aws s3 cp "${LOCAL_PATH}/${AMI_ID}.bin" \
+    "s3://${CHINA_BUCKET}/${AMI_ID}.bin" \
+    --region "${CN_REGION}" \
+    --profile "${CHINA_PROFILE}"
+  echo "AMI ID: ${AMI_ID} copied to S3 bucket '${CHINA_BUCKET}' with China profile: ${CHINA_PROFILE}"
+fi

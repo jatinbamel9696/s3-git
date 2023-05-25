@@ -19,4 +19,4 @@ jobs:
         run: echo "AMI_NAME=${{ steps.extract_ami_name.outputs.ami_name }}" >> $GITHUB_ENV
 
       - name: Echo AMI name
-        run: echo "AMI Name: $AMI_NAME"
+        run: echo "AMI Name:$AMI_NAME"

@@ -1,1 +1,22 @@
+name: My Workflow
 
+on:
+  workflow_dispatch: 
+
+jobs:
+  myJob:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Extract AMI name
+        id: extract_ami_name
+        run: echo "::set-output name=ami_name::$(grep -oP '(?<=ami-name = \")[^\"]*' ami-name)"
+
+      - name: Set environment variable
+        run: echo "AMI_NAME=${{ steps.extract_ami_name.outputs.ami_name }}" >> $GITHUB_ENV
+
+      - name: Echo AMI name
+        run: echo "AMI Name: $AMI_NAME"
